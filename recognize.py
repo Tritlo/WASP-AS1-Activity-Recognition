@@ -50,26 +50,33 @@ def buildClassifier(runningData,walkingData,standingData, WINDOW=100, STEPS=25):
 
 def classify(classifier, data):
     classifiedData = []
-    count = Counter()
     for i in range(classifier['WINDOW'],len(data), classifier['WINDOW']):
         subd = data[i-classifier['WINDOW']:i]
         meanStdDev = np.mean(np.std(subd,axis=0))
         dists = list(map(lambda m: (m[0], abs(meanStdDev - m[1])), classifier['means'].items()))
         (classification,confidence) = min(dists, key=lambda m: m[1])
-        count.update({classification: len(subd)})
         for j in range(len(subd)):
             classifiedData.append((classification, subd[j]))
-    return (np.asarray(classifiedData), count.most_common())
+    # Repeate one last time if we missed any at the end.
+    # But we need at least 2 elements! Otherwise we just apply the last label.
+    if i+2 < len(data):
+        subd = data[i:len(data)]
+        meanStdDev = np.mean(np.std(subd,axis=0))
+        dists = list(map(lambda m: (m[0], abs(meanStdDev - m[1])), classifier['means'].items()))
+        (classification,confidence) = min(dists, key=lambda m: m[1])
+        for j in range(len(subd)):
+            classifiedData.append((classification, subd[j]))
+    else:
+        for j in range(i,len(data)):
+            classifiedData.append((classification,data[j]))
+    return np.asarray(classifiedData)
 
 
-def plotClassifiedData(classificationResult):
-    data, mostCommon = classificationResult
+def plotClassifiedData(data):
     labels = data[:,0]
     dataarr = np.asarray(list(map(list,data[:,1])))
-    print(dataarr)
     maxY = np.max(dataarr)
     minY = np.min(dataarr)
-    print(np.max(dataarr))
 
     f = plt.fill_between(range(len(labels)), maxY,minY, where=([l == 'standing' for l in labels]), color='Blue', alpha=0.3 )
     f.set_label('Standing')
@@ -147,6 +154,26 @@ plotClassifier(classifier)
 allData = np.append(standingAcc, np.append(walkingAcc, runningAcc,axis=0),axis=0)
 res = classify(classifier,allData)
 
+# Verification
+i = 0
+labeledTestData = []
+for j in range(len(standingAcc)):
+    labeledTestData.append(('standing',allData[i]))
+    i += 1
+for j in range(len(walkingAcc)):
+    labeledTestData.append(('walking',allData[i]))
+    i += 1
+for j in range(len(runningAcc)):
+    labeledTestData.append(('running',allData[i]))
+    i += 1
+labeledTestData = np.asarray(labeledTestData)
+
+correct = 0
+for i in range(len(res)):
+    if res[i][0] == labeledTestData[i][0]:
+        correct += 1
+print(f'Verification: {str(round(100*correct/len(res),2))}%')
 plotClassifiedData(res)
+
 
 
