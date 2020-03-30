@@ -33,18 +33,18 @@ def buildClassifier(runningData,walkingData,standingData, WINDOW=100, STEPS=25):
     means = {'running':meanVals[0],
              'walking': meanVals[1],
              'standing': meanVals[2]}
-    decisionPoints = []
+    decisionBoundaries = []
     for (f,l) in it.combinations(means.items(), 2):
         bySize = sorted([f,l], key=lambda i: i[1])
         p = (bySize[0][1]+bySize[1][1])/2
         n = f'{bySize[0][0].capitalize()}/{bySize[1][0].capitalize()}'
-        decisionPoints.append((n,p))
-    decisionPoints = sorted(decisionPoints, key=lambda d: d[1])
+        decisionBoundaries.append((n,p))
+    decisionBoundaries = sorted(decisionBoundaries, key=lambda d: d[1])
     return { 'windows': {'running': windows[0],
                          'walking': windows[1],
                          'standing': windows[2]},
              'means': means,
-             'decisionPoints': decisionPoints,
+             'decisionBoundaries': decisionBoundaries,
              'WINDOW': WINDOW,
              'STEPS': STEPS }
 
@@ -121,16 +121,16 @@ def plotClassifier(classifier):
 
 
     alpha = 0.3
-    dp = classifier['decisionPoints']
-    l = plt.axhline(dp[-1][1], color='Red', linestyle='dotted')
-    l.set_label(dp[-1][0])
-    plt.axhspan(dp[-1][1], maxY*1.1, color='Red', alpha=alpha)
+    db = classifier['decisionBoundaries']
+    l = plt.axhline(db[-1][1], color='Red', linestyle='dotted')
+    l.set_label(db[-1][0])
+    plt.axhspan(db[-1][1], maxY*1.1, color='Red', alpha=alpha)
 
-    l = plt.axhline(dp[0][1], color='Green', linestyle='dotted')
-    l.set_label(dp[0][0])
-    plt.axhspan(dp[0][1], dp[-1][1], color='Green', alpha=alpha)
+    l = plt.axhline(db[0][1], color='Green', linestyle='dotted')
+    l.set_label(db[0][0])
+    plt.axhspan(db[0][1], db[-1][1], color='Green', alpha=alpha)
 
-    plt.axhspan(0,dp[0][1], color='Blue', alpha=alpha)
+    plt.axhspan(0,db[0][1], color='Blue', alpha=alpha)
 
     plt.legend()
 
@@ -149,12 +149,25 @@ standing = ".\data\Razan\sensorLog_20200326T183205e5xup4ssiuI_standing.txt"
 runningAcc = readData(running)
 walkingAcc = readData(walking)
 standingAcc = readData(standing)
+print('Building classifier...', end=" ")
 classifier = buildClassifier(runningAcc, walkingAcc, standingAcc)
 plotClassifier(classifier)
-allData = np.append(standingAcc, np.append(walkingAcc, runningAcc,axis=0),axis=0)
-res = classify(classifier,allData)
+print("Done!")
+
+print(f'Computed decision boundaries:')
+for k,v in classifier["decisionBoundaries"]:
+    print(f'{k}: {v}')
+
 
 # Verification
+allData = np.append(standingAcc, np.append(walkingAcc, runningAcc,axis=0),axis=0)
+print(f'Classifying {len(allData)} data points...', end = " ")
+res = classify(classifier,allData)
+plotClassifiedData(res)
+print("Done!")
+
+print("Verifying on training data...", end = " ")
+# Ratio calculation
 i = 0
 labeledTestData = []
 for j in range(len(standingAcc)):
@@ -172,8 +185,6 @@ correct = 0
 for i in range(len(res)):
     if res[i][0] == labeledTestData[i][0]:
         correct += 1
-print(f'Verification: {str(round(100*correct/len(res),2))}%')
-plotClassifiedData(res)
 
-
-
+print("Done!")
+print(f'Verification: {str(round(100*correct/len(res),2))}% correct.')
