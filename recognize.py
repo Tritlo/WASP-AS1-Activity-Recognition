@@ -187,4 +187,4 @@ for i in range(len(res)):
         correct += 1
 
 print("Done!")
-print(f'Verification: {str(round(100*correct/len(res),2))}% correct.')
+print(f'Verification: {str(round(100*correct/len(res),2))}% accurate.')
