@@ -6,7 +6,6 @@ import itertools as it
 import os
 from collections import Counter
 
-
 def readData(filename):
     with open(filename) as f:
         acc = []
@@ -165,7 +164,7 @@ walkingAcc = readData(walking)
 standingAcc = readData(standing)
 print('Building classifier...', end=" ")
 classifier = buildClassifier(runningAcc, walkingAcc, standingAcc)
-plotClassifier(classifier, "Verification.png")
+plotClassifier(classifier, "Classifier.png")
 print("Done!")
 
 print(f'Computed decision boundaries:')
