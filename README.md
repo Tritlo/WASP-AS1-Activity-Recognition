@@ -9,10 +9,9 @@ To run, first initalize a virtualenv:
 Then activate said virtualenv:
 
 ```
-  $ .\venv\Scripts\Activate.ps1
+  $ .\venv\Scripts\Activate.ps1 # (or equivalent for your shell)
 ```
 
-(or equivalent for your shell)
 
 Then, install the requirements:
 
@@ -23,5 +22,5 @@ Then, install the requirements:
 And finally, run with:
 
 ```
-  $ Measure-Command { python .\recognize.py .\data\test_data\ | Out-Default }
+  $ python .\recognize.py .\data\test_data\ 
 ```
