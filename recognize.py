@@ -61,32 +61,34 @@ def buildClassifier(runningData,walkingData,standingData, WINDOW=100, STEPS=25):
 
 def classify(classifier, data):
     classifiedData = []
-    for i in range(classifier['WINDOW'],len(data), classifier['WINDOW']):
-        # First subd[0:100], then subd[100:200], etc.
-        subd = data[i-classifier['WINDOW']:i]
+    # Calc calculates the value for the given window,
+    #  and adds it to the classified data.
+    def classifyWindow(subd):
         meanStdDev = np.mean(np.std(subd,axis=0))
         dists = list(map(lambda m: (m[0], abs(meanStdDev - m[1])), classifier['means'].items()))
         (classification,confidence) = min(dists, key=lambda m: m[1])
         for j in range(len(subd)):
-            classifiedData.append((classification, subd[j]))
+            classifiedData.append((classification, meanStdDev, subd[j]))
+
+    for i in range(classifier['WINDOW'],len(data), classifier['WINDOW']):
+        # First data[0:100], then data[100:200], etc.
+        window = data[i-classifier['WINDOW']:i]
+        classifyWindow(window)
     # Repeate one last time if we missed any at the end.
     # But we need at least 2 elements! Otherwise we just apply the last label.
     if i+2 < len(data):
-        subd = data[i:len(data)]
-        meanStdDev = np.mean(np.std(subd,axis=0))
-        dists = list(map(lambda m: (m[0], abs(meanStdDev - m[1])), classifier['means'].items()))
-        (classification,confidence) = min(dists, key=lambda m: m[1])
-        for j in range(len(subd)):
-            classifiedData.append((classification, subd[j]))
+        window = data[i:len(data)]
+        classifyWindow(subd)
     else:
         for j in range(i,len(data)):
-            classifiedData.append((classification,data[j]))
+            classifiedData.append((classification, meanStdDev, data[j]))
     return np.asarray(classifiedData)
 
 
 def plotClassifiedData(data, filename="Classification.png"):
     labels = data[:,0]
-    dataarr = np.asarray(list(map(list,data[:,1])))
+    means = data[:,1]
+    dataarr = np.asarray(list(map(list,data[:,2])))
     maxY = np.max(dataarr)
     minY = np.min(dataarr)
 
@@ -100,6 +102,8 @@ def plotClassifiedData(data, filename="Classification.png"):
     x.set_label('X Acceleration')
     y.set_label('Y Acceleration')
     z.set_label('Z Acceleration')
+    m, = plt.plot(means, linestyle='--',color='yellow')
+    m.set_label('Mean StDev')
     plt.legend()
     plt.xlabel('Time')
     plt.ylabel('Acceleration')
