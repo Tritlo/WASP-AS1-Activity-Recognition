@@ -3,6 +3,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import statistics as stats
 import itertools as it
+import os
 from collections import Counter
 
 
@@ -176,7 +177,7 @@ for k,v in classifier["decisionBoundaries"]:
 allData = np.append(standingAcc, np.append(walkingAcc, runningAcc,axis=0),axis=0)
 print(f'Classifying {len(allData)} data points...', end = " ")
 res = classify(classifier,allData)
-plotClassifiedData(res)
+plotClassifiedData(res, "Verification.png")
 print("Done!")
 
 print("Verifying on training data...", end = " ")
@@ -205,21 +206,23 @@ print(f'Verification: {str(round(100*correct/len(res),2))}% accurate.')
 if __name__ == "__main__":
     print("Running!")
     import sys
-    if len(sys.argv) > 1:
-        datafile = sys.argv[1]
-        print(f'Reading data from {datafile}...', end = " ")
-        testdata = readData(datafile)
-        print('Done!')
-        print(f'Classifying...', end = " ")
-        testres = classify(classifier,testdata)
-        print('Done!')
-        print(f'Plotting...', end = " ")
-        plotClassifiedData(testres, "TestClassification.png")
-        print('Done!')
-
-
-
-
-
-    print(sys.argv[1])
+    if len(sys.argv) > 1 and os.path.isdir(sys.argv[1]):
+        testdir = sys.argv[1]
+        testfiles = filter(os.path.isfile, map(lambda f: os.path.join(testdir,f), os.listdir(testdir)))
+        for datafile in testfiles:
+            print(f'Reading data from {datafile}...', end = " ")
+            testdata = readData(datafile)
+            print('Done!')
+            print(f'Classifying...', end = " ")
+            testres = classify(classifier,testdata)
+            results = list(map(lambda x: x[0], testres))
+            print('Done!')
+            print("Results:")
+            print(Counter(results))
+            print(f'Plotting...', end = " ")
+            output = os.path.splitext(datafile)[0]
+            plotClassifiedData(testres, f'{output}_classified.png')
+            print('Done!')
+    else:
+        print("Usage: python recognize.py <test data directory>")
     
