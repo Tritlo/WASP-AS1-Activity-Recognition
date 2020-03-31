@@ -113,7 +113,7 @@ def plotClassifiedData(data, filename="Classification.png"):
 
 
 # Plot the classifier and training data
-def plotClassifier(classifier):
+def plotClassifier(classifier, filename):
     plt.figure()
     maxY = max(list(map(np.max, classifier['windows'].values())))
 
@@ -153,7 +153,7 @@ def plotClassifier(classifier):
 
     #plt.figure(figsize=(12,5))
     plt.suptitle(f'Classifier')
-    plt.savefig('Classifier.png', dpi=120)
+    plt.savefig(filename, dpi=120)
     plt.close()
 
 
@@ -165,7 +165,7 @@ walkingAcc = readData(walking)
 standingAcc = readData(standing)
 print('Building classifier...', end=" ")
 classifier = buildClassifier(runningAcc, walkingAcc, standingAcc)
-plotClassifier(classifier)
+plotClassifier(classifier, "Verification.png")
 print("Done!")
 
 print(f'Computed decision boundaries:')
@@ -177,7 +177,7 @@ for k,v in classifier["decisionBoundaries"]:
 allData = np.append(standingAcc, np.append(walkingAcc, runningAcc,axis=0),axis=0)
 print(f'Classifying {len(allData)} data points...', end = " ")
 res = classify(classifier,allData)
-plotClassifiedData(res, "Verification.png")
+plotClassifiedData(res)
 print("Done!")
 
 print("Verifying on training data...", end = " ")
@@ -208,7 +208,11 @@ if __name__ == "__main__":
     import sys
     if len(sys.argv) > 1 and os.path.isdir(sys.argv[1]):
         testdir = sys.argv[1]
-        testfiles = filter(os.path.isfile, map(lambda f: os.path.join(testdir,f), os.listdir(testdir)))
+        print(f'Classifying data in {testdir}')
+        testfiles = filter(lambda x: os.path.splitext(x)[1] == ".txt",
+                           filter(os.path.isfile,
+                                  map(lambda f: os.path.join(testdir,f),
+                                      os.listdir(testdir))))
         for datafile in testfiles:
             print(f'Reading data from {datafile}...', end = " ")
             testdata = readData(datafile)
@@ -217,12 +221,11 @@ if __name__ == "__main__":
             testres = classify(classifier,testdata)
             results = list(map(lambda x: x[0], testres))
             print('Done!')
-            print("Results:")
-            print(Counter(results))
+            print(f'Results: {Counter(results)}')
             print(f'Plotting...', end = " ")
             output = os.path.splitext(datafile)[0]
             plotClassifiedData(testres, f'{output}_classified.png')
             print('Done!')
+
     else:
         print("Usage: python recognize.py <test data directory>")
-    
