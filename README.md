@@ -23,5 +23,5 @@ Then, install the requirements:
 And finally, run with:
 
 ```
-  $ python recognize.py
+  $ Measure-Command {python .\recognize.py .\data\test_data\sensorLog_20200331T105141e5xup4ssiuI_mix.txt | Out-Default }
 ```

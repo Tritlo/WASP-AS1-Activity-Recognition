@@ -20,9 +20,19 @@ def readData(filename):
 def calcSlidingWindowVals(data, WINDOW, STEPS):
     rStdDev = np.array([])
     for i in range(WINDOW,len(data), STEPS):
+        # First d[0:100], then d[25:125], etc.
+        # E.g. d =  [[-0.04788403  5.9759274   7.1730285 ]
+        #            [-0.05746084  5.995081    7.192182  ]
+        #            ...
+        #            [ 1.1683705   4.9799395   7.335834  ]
+        #            [ 0.9576807   4.8841715   7.0581064 ]]
         d = data[i-WINDOW:i]
-        stds = np.mean(np.std(d,axis=0))
-        rStdDev = np.append(rStdDev, stds)
+        # We compute the means for each axis, i.e.
+        # E.g. s = [0.70123355 0.53214879 0.71507838]
+        stds = np.std(d,axis=0)
+        #  E.g. mstd = 0.6494869049390805
+        mstd = np.mean(stds)
+        rStdDev = np.append(rStdDev, mstd)
     return rStdDev
 
 def buildClassifier(runningData,walkingData,standingData, WINDOW=100, STEPS=25):
@@ -34,6 +44,7 @@ def buildClassifier(runningData,walkingData,standingData, WINDOW=100, STEPS=25):
              'walking': meanVals[1],
              'standing': meanVals[2]}
     decisionBoundaries = []
+    # it.combinations(['w','s','r'],2) = [('w','s'), ('w','r'), ('s','r')]
     for (f,l) in it.combinations(means.items(), 2):
         bySize = sorted([f,l], key=lambda i: i[1])
         p = (bySize[0][1]+bySize[1][1])/2
@@ -51,6 +62,7 @@ def buildClassifier(runningData,walkingData,standingData, WINDOW=100, STEPS=25):
 def classify(classifier, data):
     classifiedData = []
     for i in range(classifier['WINDOW'],len(data), classifier['WINDOW']):
+        # First subd[0:100], then subd[100:200], etc.
         subd = data[i-classifier['WINDOW']:i]
         meanStdDev = np.mean(np.std(subd,axis=0))
         dists = list(map(lambda m: (m[0], abs(meanStdDev - m[1])), classifier['means'].items()))
@@ -72,7 +84,7 @@ def classify(classifier, data):
     return np.asarray(classifiedData)
 
 
-def plotClassifiedData(data):
+def plotClassifiedData(data, filename="Classification.png"):
     labels = data[:,0]
     dataarr = np.asarray(list(map(list,data[:,1])))
     maxY = np.max(dataarr)
@@ -92,7 +104,8 @@ def plotClassifiedData(data):
     plt.xlabel('Time')
     plt.ylabel('Acceleration')
     plt.suptitle(f'Classification')
-    plt.savefig('Classification.png', dpi=120)
+    plt.savefig(filename, dpi=120)
+    plt.close()
 
 
 
@@ -188,3 +201,25 @@ for i in range(len(res)):
 
 print("Done!")
 print(f'Verification: {str(round(100*correct/len(res),2))}% accurate.')
+
+if __name__ == "__main__":
+    print("Running!")
+    import sys
+    if len(sys.argv) > 1:
+        datafile = sys.argv[1]
+        print(f'Reading data from {datafile}...', end = " ")
+        testdata = readData(datafile)
+        print('Done!')
+        print(f'Classifying...', end = " ")
+        testres = classify(classifier,testdata)
+        print('Done!')
+        print(f'Plotting...', end = " ")
+        plotClassifiedData(testres, "TestClassification.png")
+        print('Done!')
+
+
+
+
+
+    print(sys.argv[1])
+    
